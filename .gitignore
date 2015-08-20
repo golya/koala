@@ -1,3 +1,4 @@
 .idea
 node_modules
-public/bower_components
+public/www/bower_components
+public/login/bower_components

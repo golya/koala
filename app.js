@@ -1,24 +1,70 @@
 'use strict';
-var messages = require('./controllers/messages');
+
+var session = require('koa-session');
+var passport = require('koa-passport');
+var LocalStrategy = require('passport-local').Strategy;
+
+var bodyParser = require('koa-bodyparser');
 var compress = require('koa-compress');
 var logger = require('koa-logger');
 var serve = require('koa-static');
-var route = require('koa-route');
+var router = require('koa-router')();
 var koa = require('koa');
 var path = require('path');
 var app = module.exports = koa();
 
-// Logger
-app.use(logger());
 
-app.use(route.get('/', messages.home));
-app.use(route.get('/messages', messages.list));
-app.use(route.get('/messages/:id', messages.fetch));
-app.use(route.post('/messages', messages.create));
-app.use(route.get('/async', messages.delay));
+app.keys = ['0ef7803e-473a-11e5-9d62-126b7daeca32'];
+
+app.use(logger());
+app.use(bodyParser());
+app.use(session(app));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+function *authed(next){
+    if (this.req.isAuthenticated()){
+    //var auth = false;
+    //if (auth){
+        yield next;
+    } else {
+        //Set redirect path in session
+        //this.session.returnTo = this.session.returnTo || this.req.url;
+        this.redirect('/login/');
+    }
+}
+
+app.use(require('koa-livereload')());
+
+app.use(router.routes());
+app.use(router.allowedMethods());
+
+//auth
+
+var serialize = function (user, done) {
+    done(null, user.id);
+};
+
+var deserialize = function (id, done) {
+    done(null, { id: 1, username: 'mail@mail.hu' })
+};
+
+var localUser = function (username, password, done){
+    if (username == 'mail@mail.hu' && password == 'test') {
+        done(null, { id: 1, username: 'mail@mail.hu' });
+    } else {
+        done(null, false);
+    }
+};
+
+passport.serializeUser(serialize);
+passport.deserializeUser(deserialize);
+passport.use(new LocalStrategy(localUser));
 
 // Serve static files
-app.use(serve(path.join(__dirname, 'public')));
+app.use(serve(path.join(__dirname, 'public/login')));
+app.use(serve(path.join(__dirname, 'public/www')));
 
 // Compress
 app.use(compress());
@@ -27,3 +73,18 @@ if (!module.parent) {
   app.listen(3000);
   console.log('listening on port 3000');
 }
+
+router.get('/', authed);
+
+router.get('/login/', serve(path.join(__dirname, 'public/'), {index: 'login.html'}));
+router.redirect('/login', '/login/');
+router.post(
+    '/auth',
+    passport.authenticate('local', { successRedirect: '/', failureRedirect: '/login/' })
+);
+
+var messages = require('./controllers/messages');
+router.get('/messages', authed, messages.list);
+router.get('/messages/:id', authed, messages.fetch);
+router.post('/messages', authed, messages.create);
+
