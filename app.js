@@ -32,12 +32,8 @@ app.use(passport.session());
 
 function *authed(next){
     if (this.req.isAuthenticated()){
-    //var auth = false;
-    //if (auth){
         yield next;
     } else {
-        //Set redirect path in session
-        //this.session.returnTo = this.session.returnTo || this.req.url;
         this.redirect('/login/');
     }
 }
