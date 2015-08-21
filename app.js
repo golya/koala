@@ -38,7 +38,14 @@ function *authed(next){
     }
 }
 
-app.use(require('koa-livereload')());
+function *logout(next){
+    console.log('logoooooout');
+    this.req.logOut();
+    yield next;
+    this.redirect('/');
+}
+
+//app.use(require('koa-livereload')());
 
 app.use(router.routes());
 app.use(router.allowedMethods());
@@ -94,6 +101,7 @@ router.post(
     '/auth',
     passport.authenticate('local', { successRedirect: '/', failureRedirect: '/login/' })
 );
+router.post('/logout', logout);
 
 var messages = require('./controllers/messages');
 router.get('/messages', authed, messages.list);
