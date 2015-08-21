@@ -1,23 +1,24 @@
 'use strict';
 
+var koa = require('koa');
 var session = require('koa-session');
-var passport = require('koa-passport');
-var LocalStrategy = require('passport-local').Strategy;
-
 var bodyParser = require('koa-bodyparser');
 var compress = require('koa-compress');
 var logger = require('koa-logger');
 var serve = require('koa-static');
 var router = require('koa-router')();
-var koa = require('koa');
+
+var passport = require('koa-passport');
+var LocalStrategy = require('passport-local').Strategy;
+
 var http = require('http');
 var https = require('https');
 //var forceSSL = require('koa-force-ssl');
 
 var fs = require('fs');
 var path = require('path');
-var app = module.exports = koa();
 
+var app = module.exports = koa();
 
 app.keys = ['0ef7803e-473a-11e5-9d62-126b7daeca32'];
 
