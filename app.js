@@ -17,7 +17,7 @@ var https = require('https');
 
 var fs = require('fs');
 var path = require('path');
-
+var auth = require('./lib/auth');
 var app = module.exports = koa();
 
 app.keys = ['0ef7803e-473a-11e5-9d62-126b7daeca32'];
@@ -30,47 +30,14 @@ app.use(session(app));
 app.use(passport.initialize());
 app.use(passport.session());
 
-function *authed(next){
-    if (this.req.isAuthenticated()){
-        yield next;
-    } else {
-        this.redirect('/login/');
-    }
-}
-
-function *logout(next){
-    console.log('logoooooout');
-    this.req.logOut();
-    yield next;
-    this.redirect('/');
-}
-
 //app.use(require('koa-livereload')());
 
 app.use(router.routes());
 app.use(router.allowedMethods());
 
-//auth
-
-var serialize = function (user, done) {
-    done(null, user.id);
-};
-
-var deserialize = function (id, done) {
-    done(null, { id: 1, username: 'mail@mail.hu' })
-};
-
-var localUser = function (username, password, done){
-    if (username == 'mail@mail.hu' && password == 'test') {
-        done(null, { id: 1, username: 'mail@mail.hu' });
-    } else {
-        done(null, false);
-    }
-};
-
-passport.serializeUser(serialize);
-passport.deserializeUser(deserialize);
-passport.use(new LocalStrategy(localUser));
+passport.serializeUser(auth.serialize);
+passport.deserializeUser(auth.deserialize);
+passport.use(new LocalStrategy(auth.localUser));
 
 // Serve static files
 app.use(serve(path.join(__dirname, 'public/login')));
@@ -93,7 +60,7 @@ if (!module.parent) {
     console.log('listening on port', port);
 }
 
-router.get('/', authed);
+router.get('/', auth.authed);
 
 router.get('/login/', serve(path.join(__dirname, 'public/'), {index: 'login.html'}));
 router.redirect('/login', '/login/');
@@ -101,10 +68,10 @@ router.post(
     '/auth',
     passport.authenticate('local', { successRedirect: '/', failureRedirect: '/login/' })
 );
-router.post('/logout', logout);
+router.post('/logout', auth.logout);
 
 var messages = require('./controllers/messages');
-router.get('/messages', authed, messages.list);
-router.get('/messages/:id', authed, messages.fetch);
-router.post('/messages', authed, messages.create);
+router.get('/messages', auth.authed, messages.list);
+router.get('/messages/:id', auth.authed, messages.fetch);
+router.post('/messages', auth.authed, messages.create);
 
