@@ -15,6 +15,8 @@ var http = require('http');
 var https = require('https');
 //var forceSSL = require('koa-force-ssl');
 
+var mongoose = require("mongoose");
+
 var fs = require('fs');
 var path = require('path');
 var auth = require('./lib/auth');
@@ -42,6 +44,8 @@ passport.use(new LocalStrategy(auth.localUser));
 // Serve static files
 app.use(serve(path.join(__dirname, 'public/login')));
 app.use(serve(path.join(__dirname, 'public/www')));
+
+mongoose.connect('mongodb://localhost/test');
 
 // Compress
 app.use(compress());
